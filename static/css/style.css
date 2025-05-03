@@ -1,0 +1,194 @@
+/* Main styles for the Face Detection App */
+
+:root {
+    --primary-color: #4a90e2;
+    --secondary-color: #5cb85c;
+    --dark-color: #333;
+    --light-color: #f4f4f4;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #F5EEDD !important;
+    color: var(--dark-color);
+    line-height: 1.6;
+}
+
+.container {
+    padding: 20px;
+    max-width: 1200px;
+}
+
+/* Video container styles */
+.video-container {
+    position: relative;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #000;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    aspect-ratio: 16 / 9;
+}
+
+#video-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Camera message styles */
+.camera-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    z-index: 10;
+}
+
+.message-content {
+    max-width: 500px;
+    padding: 30px;
+}
+
+.icon-container {
+    font-size: 3rem;
+    color: var(--warning-color);
+}
+
+/* Face counter styles */
+.face-counter-container {
+    margin-top: 2rem;
+}
+
+.counter-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.count-display {
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 10px 0;
+}
+
+/* Button styles */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 10px 20px;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: #3a7ed0;
+    border-color: #3a7ed0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .video-container {
+        aspect-ratio: 4 / 3;  /* More squared ratio for mobile */
+    }
+    
+    .count-display {
+        font-size: 3rem;
+    }
+    
+    h1.display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .message-content {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .count-display {
+        font-size: 2.5rem;
+    }
+    
+    h1.display-4 {
+        font-size: 2rem;
+    }
+    
+    .counter-card {
+        padding: 15px;
+    }
+}
+
+/* Landscape mode for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .video-container {
+        aspect-ratio: 16 / 9;
+        max-height: 50vh;
+    }
+    
+    .face-counter-container {
+        margin-top: 1rem;
+    }
+}
+
+/* Remove previous custom header and PixPersona styles */
+.custom-header, .logo-container, .title-container, .pixpersona-title {
+    display: none !important;
+}
+
+.logo-top-left {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 100;
+}
+.logo-img-eye-catchy {
+    height: 72px;
+    width: 72px;
+    object-fit: contain;
+    border-radius: 18px;
+    box-shadow: 0 6px 24px rgba(59,130,246,0.18), 0 1.5px 8px rgba(0,0,0,0.10);
+    background: #fff;
+    padding: 8px;
+    transition: transform 0.2s;
+}
+.logo-img-eye-catchy:hover {
+    transform: scale(1.08) rotate(-3deg);
+    box-shadow: 0 12px 32px rgba(59,130,246,0.28), 0 3px 16px rgba(0,0,0,0.15);
+}
+
+.main-header {
+    margin-top: 90px;
+    margin-bottom: 24px;
+}
+.main-header .display-4 {
+    font-weight: 700;
+    color: #222;
+    letter-spacing: 1px;
+}
+.subtitle {
+    font-size: 1.3rem;
+    color: #3B82F6;
+    font-weight: 500;
+    margin-top: 8px;
+    margin-bottom: 0;
+    letter-spacing: 0.5px;
+} 

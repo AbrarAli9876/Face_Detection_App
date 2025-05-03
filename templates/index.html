@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Detection App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        #video-container {
+            margin: 20px auto;
+            position: relative;
+            width: 640px;
+            height: 480px;
+        }
+        #webcam, #canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+        }
+        #canvas {
+            z-index: 10;
+        }
+        #face-count {
+            font-size: 24px;
+            margin: 20px 0;
+            color: #333;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            color: #666;
+            font-style: italic;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Detection App</h1>
+        
+        <div id="video-container">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div id="face-count">Faces detected: <span id="count">0</span></div>
+        
+        <div class="controls">
+            <button id="start-btn">Start Camera</button>
+            <button id="stop-btn" disabled>Stop Camera</button>
+        </div>
+        
+        <p class="status" id="status">Camera not started</p>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const faceCountElement = document.getElementById('count');
+        const startButton = document.getElementById('start-btn');
+        const stopButton = document.getElementById('stop-btn');
+        const statusElement = document.getElementById('status');
+        
+        let isStreaming = false;
+        let mediaStream = null;
+        let animationId = null;
+        
+        // Set canvas dimensions to match video
+        canvas.width = 640;
+        canvas.height = 480;
+        
+        // Start the webcam
+        async function startWebcam() {
+            try {
+                const constraints = {
+                    video: {
+                        width: 640,
+                        height: 480,
+                        facingMode: 'user'
+                    }
+                };
+                
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = mediaStream;
+                
+                video.onloadedmetadata = () => {
+                    isStreaming = true;
+                    startButton.disabled = true;
+                    stopButton.disabled = false;
+                    statusElement.textContent = 'Camera active - Processing faces';
+                    sendFrames();
+                };
+            } catch (error) {
+                console.error('Error accessing webcam:', error);
+                statusElement.textContent = 'Error: Could not access webcam. Please ensure your browser has permission.';
+            }
+        }
+        
+        // Stop the webcam
+        function stopWebcam() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                isStreaming = false;
+                
+                // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Update UI
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                statusElement.textContent = 'Camera stopped';
+                faceCountElement.textContent = '0';
+                
+                // Stop the animation frame
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+        
+        // Process frames and send to server
+        function sendFrames() {
+            if (!isStreaming) return;
+            
+            // Draw the video frame to the canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Get the image data
+            const imageData = canvas.toDataURL('image/jpeg', 0.7);
+            
+            // Send the image to the server for processing
+            fetch('/process_frame', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update the face count
+                document.getElementById('count').textContent = data.count;
+                
+                // Draw face boxes if provided
+                if (data.faces && data.faces.length > 0) {
+                    drawFaceBoxes(data.faces);
+                }
+                
+                // Continue the loop
+                animationId = requestAnimationFrame(sendFrames);
+            })
+            .catch(error => {
+                console.error('Error processing frame:', error);
+                statusElement.textContent = 'Error processing video frame';
+                // Try again after a short delay even if there was an error
+                setTimeout(() => {
+                    animationId = requestAnimationFrame(sendFrames);
+                }, 1000);
+            });
+        }
+        
+        // Draw face boxes on the canvas
+        function drawFaceBoxes(faces) {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'lime';
+            
+            faces.forEach(face => {
+                ctx.beginPath();
+                ctx.rect(face.x, face.y, face.width, face.height);
+                ctx.stroke();
+            });
+        }
+        
+        // Event listeners
+        startButton.addEventListener('click', startWebcam);
+        stopButton.addEventListener('click', stopWebcam);
+        
+        // Clean up when the page is closed
+        window.addEventListener('beforeunload', stopWebcam);
+    </script>
+</body>
+</html> 
