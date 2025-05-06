@@ -73,6 +73,9 @@
     </style>
 </head>
 <body>
+    <div id="connection-error" style="display:none; color: white; background: #d9534f; padding: 12px; font-size: 18px; font-weight: bold; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;">
+        Please check your internet connection.
+    </div>
     <div class="container">
         <h1>Face Detection App</h1>
         
@@ -99,6 +102,7 @@
         const startButton = document.getElementById('start-btn');
         const stopButton = document.getElementById('stop-btn');
         const statusElement = document.getElementById('status');
+        const connectionErrorBanner = document.getElementById('connection-error');
         
         let isStreaming = false;
         let mediaStream = null;
@@ -158,9 +162,43 @@
             }
         }
         
+        function showConnectionError(show) {
+            connectionErrorBanner.style.display = show ? 'block' : 'none';
+        }
+
+        function checkConnectionAndRetry() {
+            if (navigator.onLine) {
+                showConnectionError(false);
+                // Try to resume sending frames if streaming
+                if (isStreaming && !animationId) {
+                    sendFrames();
+                }
+            } else {
+                showConnectionError(true);
+                // Keep checking every second until online
+                setTimeout(checkConnectionAndRetry, 1000);
+            }
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', () => {
+            showConnectionError(false);
+            if (isStreaming && !animationId) {
+                sendFrames();
+            }
+        });
+        window.addEventListener('offline', () => {
+            showConnectionError(true);
+        });
+        
         // Process frames and send to server
         function sendFrames() {
             if (!isStreaming) return;
+            if (!navigator.onLine) {
+                showConnectionError(true);
+                checkConnectionAndRetry();
+                return;
+            }
             
             // Draw the video frame to the canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -178,6 +216,7 @@
             })
             .then(response => response.json())
             .then(data => {
+                showConnectionError(false);
                 // Update the face count
                 document.getElementById('count').textContent = data.count;
                 
@@ -190,12 +229,15 @@
                 animationId = requestAnimationFrame(sendFrames);
             })
             .catch(error => {
-                console.error('Error processing frame:', error);
-                statusElement.textContent = 'Error processing video frame';
-                // Try again after a short delay even if there was an error
-                setTimeout(() => {
-                    animationId = requestAnimationFrame(sendFrames);
-                }, 1000);
+                if (!navigator.onLine) {
+                    showConnectionError(true);
+                    checkConnectionAndRetry();
+                } else {
+                    statusElement.textContent = 'Error processing video frame';
+                    setTimeout(() => {
+                        animationId = requestAnimationFrame(sendFrames);
+                    }, 1000);
+                }
             });
         }
         
