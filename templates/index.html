@@ -73,7 +73,7 @@
     </style>
 </head>
 <body>
-    <div id="connection-error" style="display:none; color: white; background: #d9534f; padding: 12px; font-size: 18px; font-weight: bold; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;">
+    <div id="connection-banner" style="display:none; color: white; background: #d9534f; padding: 12px; font-size: 18px; font-weight: bold; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;">
         Please check your internet connection.
     </div>
     <div class="container">
@@ -102,11 +102,12 @@
         const startButton = document.getElementById('start-btn');
         const stopButton = document.getElementById('stop-btn');
         const statusElement = document.getElementById('status');
-        const connectionErrorBanner = document.getElementById('connection-error');
+        const connectionBanner = document.getElementById('connection-banner');
         
         let isStreaming = false;
         let mediaStream = null;
         let animationId = null;
+        let bannerTimeout = null;
         
         // Set canvas dimensions to match video
         canvas.width = 640;
@@ -163,12 +164,28 @@
         }
         
         function showConnectionError(show) {
-            connectionErrorBanner.style.display = show ? 'block' : 'none';
+            if (show) {
+                connectionBanner.textContent = 'Please check your internet connection.';
+                connectionBanner.style.background = '#d9534f';
+                connectionBanner.style.display = 'block';
+            } else {
+                connectionBanner.style.display = 'none';
+            }
+        }
+
+        function showConnectionSuccess() {
+            connectionBanner.textContent = 'Hurray! Your internet is back';
+            connectionBanner.style.background = '#5cb85c';
+            connectionBanner.style.display = 'block';
+            if (bannerTimeout) clearTimeout(bannerTimeout);
+            bannerTimeout = setTimeout(() => {
+                connectionBanner.style.display = 'none';
+            }, 3000);
         }
 
         function checkConnectionAndRetry() {
             if (navigator.onLine) {
-                showConnectionError(false);
+                showConnectionSuccess();
                 // Try to resume sending frames if streaming
                 if (isStreaming && !animationId) {
                     sendFrames();
@@ -182,7 +199,7 @@
 
         // Listen for online/offline events
         window.addEventListener('online', () => {
-            showConnectionError(false);
+            showConnectionSuccess();
             if (isStreaming && !animationId) {
                 sendFrames();
             }
